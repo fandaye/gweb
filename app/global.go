@@ -16,6 +16,10 @@ import (
 type Global struct {
 	GlobalConfig     map[string]string
 	CookieExpiration int
+	MaxLoginErrorNumber int
+	LoginErrorNumber int
+	LoginErrorLockTime int
+
 	modules.Config
 	modules.DB
 	modules.Redis
