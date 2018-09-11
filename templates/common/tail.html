@@ -1,0 +1,39 @@
+{{ define "tail" }}
+<footer>
+    <div class="container-fluid">
+        <p>V 1.1</p>
+    </div>
+</footer>
+
+<script>
+
+    function syserror() {
+        layer.msg("系统错误!")
+    }
+    function restarterror() {
+        layer.alert('服务完成重启，请重新登录!', {
+            skin: 'layui-layer-molv' //样式类名
+            ,closeBtn: 0
+        }, function(){
+            window.location.href = "/login";
+        });
+    }
+    function logouterror() {
+        layer.alert('账户异地登录，被迫下线，请重新登录!', {
+            skin: 'layui-layer-molv' //样式类名
+            ,closeBtn: 0
+        }, function(){
+            window.location.href = "/login";
+        });
+    }
+    function logtimeout() {
+        layer.alert('登录超时，请重新登录!', {
+            skin: 'layui-layer-molv' //样式类名
+            ,closeBtn: 0
+        }, function(){
+            window.location.href = "/login";
+        });
+    }
+</script>
+
+{{ end }}

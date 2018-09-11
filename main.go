@@ -10,7 +10,7 @@ func main() {
 	g := app.Global{}
 	g.ConfigFile = "config/config.ini"
 
-	g.GlobalConfig =  g.Config.GlobalConfig()
+	g.GlobalConfig = g.Config.GlobalConfig()
 
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static", fs))
@@ -19,6 +19,7 @@ func main() {
 	http.HandleFunc("/logout", g.Logout)
 	http.HandleFunc("/", g.AuthHandler(g.Index))
 
+	http.HandleFunc("/ldap", g.AuthHandler(g.Ldap))
 
 	ADDR := g.GlobalConfig["bind"] + ":" + g.GlobalConfig["port"]
 	log.Println("开始启动监听:" + ADDR)

@@ -1,0 +1,361 @@
+{{ template "head" .}}
+
+<div class="main">
+    <div class="main-content">
+        <div class="container-fluid">
+            <h3 class="page-title">用户列表</h3>
+            <div>
+                <div>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius">添加</button>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" onclick="_refresh()">刷新</button>
+                </div>
+                <table class="layui-table">
+                    <thead>
+                    <tr>
+                        <th>uid</th>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>电话</th>
+                        <th>用户组</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="userinfo"></tbody>
+                </table>
+
+                <!-- 添加用户弹层信息 -->
+                <div style="display: none" id="UserMode" class="container-fluid">
+                    <fieldset class="layui-elem-field layui-field-title" style="margin-top: 50px;">
+                        <legend>用户编辑框</legend>
+                    </fieldset>
+                    <form class="layui-form layui-form-pane" action="">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">邮箱地址</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="email" autocomplete="off" class="layui-input" lay-verify="email" placeholder="请输入邮箱地址">
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">昵称</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="full_name" autocomplete="off" lay-verify="required" class="layui-input" placeholder="请输入昵称">
+                            </div>
+                        </div>
+                        <div class="layui-form-item" >
+                            <label class="layui-form-label">权限</label>
+                            <div class="layui-input-block layui-form" lay-filter="selFilter" lay-verify="UserModeRoleValue" >
+                                <select name="role_name" lay-filter="aihao" id="UserModeRoleValue">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">密码</label>
+                            <div class="layui-input-block">
+                                <input type="password" name="password" placeholder="请输入密码" autocomplete="off" lay-verify="pass" class="layui-input">
+                            </div>
+                        </div>
+                        <div class="layui-form-item" pane="">
+                            <label class="layui-form-label">状态</label>
+                            <div class="layui-input-block">
+                                <input type="radio" name="active" value="1" title="启用">
+                                <input type="radio" name="active" value="0" title="禁用" checked="">
+                            </div>
+                        </div>
+
+                        <div class="layui-form-item">
+                            <div class="layui-input-block" style="float:right">
+                                <button class="layui-btn" lay-submit="" lay-filter="UserModePost" >立即提交</button>
+                                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 添加用户弹层信息结束  -->
+
+
+            </div>
+        </div>
+    </div>
+</div>
+<div class="clearfix"></div>
+{{ template "tail" }}
+</div>
+<script src="/static/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/static/assets/vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="/static/assets/vendor/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+<script src="/static/assets/scripts/klorofil-common.js"></script>
+<script src="/static/layui/layui.js" charset="utf-8"></script>
+<script src="/static/js/ldap.js"></script>
+
+<script>
+    layui.use(['form', 'layedit', 'laydate'], function(){
+        var form = layui.form
+            ,layer = layui.layer
+            ,layedit = layui.layedit
+            ,laydate = layui.laydate;
+
+        //日期
+        laydate.render({
+            elem: '#date'
+        });
+        laydate.render({
+            elem: '#date1'
+        });
+
+        //创建一个编辑器
+        var editIndex = layedit.build('LAY_demo_editor');
+
+        //自定义验证规则
+        form.verify({
+            title: function(value){
+                if(value.length < 5){
+                    return '标题至少得5个字符啊';
+                }
+            }
+            ,pass: [/(.+){6,12}$/, '密码必须6到12位']
+            ,content: function(value){
+                layedit.sync(editIndex);
+            }
+        });
+        //监听提交
+        form.on('submit(UserModePost)', function(data){ //   --------------------------------------------------------- -------添加用户(提交)
+            $.ajax(
+                {
+                    type: 'post',
+                    url: '/users/data',
+                    data: {"data": JSON.stringify(data.field), "action": 'adduser'},
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code != 1) {
+                            layer.msg(data.msg)
+                        } else {
+                            parent.layer.closeAll();
+                            var table = layui.table;
+                            table.reload('userdata', {
+                                url: '/users/data'
+                                ,where: {action: 'list'}
+                                ,method:'post'
+                            });
+                        }
+                    }
+                }
+            );
+            return false
+        });
+
+        form.on('submit(UserModeActiveEditPost)', function(data){ //  ----------------------------------------------------------编辑用户状态(提交)
+            $.ajax(
+                {
+                    type: 'post',
+                    url: '/users/data',
+                    data: {"data": JSON.stringify(data.field), "action": 'editactive'},
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code != 1) {
+                            layer.msg(data.msg)
+                        } else {
+                            parent.layer.closeAll();
+                            var table = layui.table;
+                            table.reload('userdata', {
+                                url: '/users/data'
+                                ,where: {action: 'list'}
+                                ,method:'post'
+                            });
+                        }
+                    }
+                }
+            );
+            return false
+        });  //UserModeRoleEditPost
+
+        form.on('submit(UserModeRoleEditPost)', function(data){//  -------------------------------------------------------- 编辑用户角色(提交)
+            $.ajax(
+                {
+                    type: 'post',
+                    url: '/users/data',
+                    data: {"data": JSON.stringify(data.field), "action": 'editrole'},
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code != 1) {
+                            layer.msg(data.msg)
+                        } else {
+                            parent.layer.closeAll();
+                            var table = layui.table;
+                            table.reload('userdata', {
+                                url: '/users/data'
+                                ,where: {action: 'list'}
+                                ,method:'post'
+                            });
+                        }
+                    }
+                }
+            );
+            return false
+        });
+    });
+
+
+    //修改字段值，字段需开启edit: 'text'
+    layui.use('table', function () {
+        var table = layui.table;
+        table.on('edit(userdata)', function (obj) {
+            var value = obj.value //得到修改后的值
+                , line = obj.data //得到所在行所有键值
+                , field = obj.field; //得到字段
+            $.ajax(
+                {
+                    type: 'post',
+                    url: '/users/data',
+                    data: {"id": line.id, "value": value, "field": field, "action": 'update'},
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code != 1) {
+                            layer.msg(data.msg);
+                            var table = layui.table;
+                            table.reload('userdata', {
+                                url: '/users/data'
+                                ,where: {action: 'list'}
+                                ,method:'post'
+                            });
+                        } else {
+                            layer.msg('[ID: ' + line.id + '] ' + field + ' 字段更改为：' + value);
+                        }
+                    }
+                }
+            );
+        });
+    });
+
+
+    // 操作方式
+    layui.use('table', function () {
+        var table = layui.table;
+        table.on('tool(userdata)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'del') {  // -------------------------------------------------------------------------------删除用户
+                layer.confirm('真的删除该用户?', function (index) {
+                    $.ajax(
+                        {
+                            type: 'post',
+                            url: '/users/data',
+                            data: {"id": data.id, "action": 'delete'},
+                            dataType: 'json',
+                            success: function (data) {
+                                if (data.code != 1) {
+                                    layer.msg(data.msg)
+                                } else {
+                                    obj.del();
+                                    layer.close(index);
+                                }
+                            }
+                        }
+                    );
+                });
+            }else if(obj.event === 'setactive'){ //----------------------------------------------------------------------- 编辑用户状态(弹层)
+                var form = layui.form;
+                if (data["active"] === "启用"){
+                    var active = "1"
+                }else {
+                    var active = "0"
+                }
+                form.val('UserModeActiveEdit', {
+                    "user_id":data["id"],
+                    "active": active
+                });
+                $("#UserModeEditName").html("用户<a style='font-weight:bold'>"+ data["full_name"]+"</a>状态编辑");
+                layer.open({
+                    type: 1,
+                    title: false,
+                    closeBtn: 0,
+                    area: ['40%', '299px'],
+                    skin: 'white',
+                    shadeClose: true,
+                    content: $('#UserModeActiveEdit')
+                });
+            } else if (obj.event === 'setrole'){  //----------------------------------------------------------------------- 编辑用户角色(弹层)
+                $.ajax(
+                    {
+                        type: 'post',
+                        url: '/roles/data',
+                        data: {"action": 'listall'},
+                        dataType: 'json',
+                        success: function (obj) {
+                            if (obj.code != 1) {
+                                layer.msg(obj.msg)
+                            } else {
+                                var str = '';
+                                for (i = 0; i < obj.data.length; i++) {
+                                    str+='<option value="'+ obj.data[i].role_name +'">'+ obj.data[i].role_name+'</option> '
+                                }
+                                $("#UserModeRoleEditValue").html(str);
+                                var form = layui.form;
+                                form.render('select','UserModeRoleEditValue');
+                                form.val('UserModeRoleEdit', {
+                                    "user_id":data["id"],
+                                    "role_name": data["role_name"]
+                                });
+
+                                layer.open({
+                                    type: 1,
+                                    title: false,
+                                    closeBtn: 0,
+                                    area: ['60%', '450px'],
+                                    skin: 'white', //没有背景色
+                                    shadeClose: true,
+                                    content: $('#UserModeRoleEdit')
+                                });
+                            }
+                        }
+                    }
+                );
+            }
+        });
+
+        var $ = layui.$, active = { // -------------------------------------------------------------------------------------添加用户(弹层)
+            UserMode: function () {  // RoleValue
+                $.ajax(
+                    {
+                        type: 'post',
+                        url: '/roles/data',
+                        data: {"action": 'listall'},
+                        dataType: 'json',
+                        success: function (data) {
+                            if (data.code != 1) {
+                                layer.msg(data.msg)
+                            } else {
+                                var str = '<option value="">请选择用户权限</option>';
+                                for (i = 0; i < data.data.length; i++) {
+                                    str += '<option value="'+ data.data[i].role_name +'">'+ data.data[i].role_name+'</option> ';
+                                }
+                                $("#UserModeRoleValue").html(str);
+
+                                var form = layui.form;
+                                form.render('select','selFilter');
+
+                                layer.open({
+                                    type: 1,
+                                    title: false,
+                                    closeBtn: 0,
+                                    area: ['60%', '475px'],
+                                    skin: 'white', //没有背景色
+                                    shadeClose: true,
+                                    content: $('#UserMode')
+                                });
+                            }
+                        }
+                    }
+                );
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+</script>
+
+</body>
+
+</html>

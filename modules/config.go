@@ -73,6 +73,27 @@ func (c *Config) RedisConfig() map[string]string {
 }
 
 
+func (c *Config) LdapConfig() map[string]string {
+	var r = make(map[string]string)
+	cfg, err := config.ReadDefault(c.ConfigFile)
+	if err != nil {
+		log.Fatalf("Fail to find", c.ConfigFile, err)
+	}
+
+	if cfg.HasSection("ldap") {
+		section, err := cfg.SectionOptions("ldap")
+		if err == nil {
+			for _, v := range section {
+				options, err := cfg.String("ldap", v)
+				if err == nil {
+					r[v] = options
+				}
+			}
+		}
+	}
+	return r
+}
+
 
 func (c *Config) CheckMapCV(M map[string]string, V string) bool {
 	for i := range M {
