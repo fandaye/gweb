@@ -129,6 +129,42 @@
     //监听提交
     form.on('submit(AddMenuDivPost)', function (data) {
         layer.alert(JSON.stringify(data.field));
+        $.ajax({
+            type: 'post',
+            url: '/sys',
+            data: {
+                "action": 'AddMenu',
+                "data": JSON.stringify(data.field)
+            },
+            dataType: 'json',
+            success: function(data) {
+                layer.msg(data.msg);
+                if (data.code == '0'){
+                    _SysMenurefresh()
+                }
+            }
+        });
+        return false;
+    });
+
+
+    form.on('submit(EditMenuDivPost)', function (data) {
+        layer.alert(JSON.stringify(data.field));
+        $.ajax({
+            type: 'post',
+            url: '/sys',
+            data: {
+                "action": 'EditMenu',
+                "data": JSON.stringify(data.field)
+            },
+            dataType: 'json',
+            success: function(data) {
+                layer.msg(data.msg);
+                if (data.code == '0'){
+                    _SysMenurefresh()
+                }
+            }
+        });
         return false;
     });
 </script>

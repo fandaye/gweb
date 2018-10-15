@@ -75,7 +75,7 @@ func (G *Global) AuthHandler(f func(http.ResponseWriter, *http.Request)) func(ht
 	return func(w http.ResponseWriter, r *http.Request) {
 		if G.DB.Conn.Driver() == nil{
 			if err := G.DB.Connect(); err != nil { // 初始化MYSQL 连接
-				log.Println("函数 main 初始化mysql连接失败: ", err)
+				log.Println("初始化mysql连接失败: ", err)
 				return
 			}
 		}
@@ -88,7 +88,7 @@ func (G *Global) AuthHandler(f func(http.ResponseWriter, *http.Request)) func(ht
 		CookieAuthToken, CookieAuthTokenErr := r.Cookie("AuthToken")
 		CookieUsername, CookieUsernameErr := r.Cookie("Username")
 		if CookieAuthTokenErr != nil || CookieUsernameErr != nil { // 获取cookie 失败重定向到登录页面
-			http.Redirect(w, r, "/login", http.StatusFound)
+			fmt.Fprintf(w, string(getJson(-3, "获取Cookie失败,请重新登录", nil)))
 		} else {
 			if UserInfo, err := G.Redis.Get(CookieUsername.Value); err == nil { // 获取redis 信息
 				var JsonRes UserInfoUnmarshal

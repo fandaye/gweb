@@ -6,6 +6,7 @@ import (
 	"log"
 	"fmt"
 	"encoding/json"
+	"time"
 )
 
 type SysMenuJson struct {
@@ -47,6 +48,7 @@ func (G *Global) Sys(w http.ResponseWriter, r *http.Request) {
 			if data, err := G.SelectAll("SELECT * FROM menu"); err == nil {
 				for _, va := range *data {
 					vmap := make(map[string]string)
+					vmap["id"] = va["id"]
 					vmap["menu_lcon"] = va["menu_lcon"]
 					vmap["menu_url"] = va["menu_url"]
 					vmap["menu_name"] = va["menu_name"]
@@ -77,13 +79,30 @@ func (G *Global) Sys(w http.ResponseWriter, r *http.Request) {
 			var m SysMenuJson
 			if err := json.Unmarshal([]byte(r.PostFormValue("data")), &m); err == nil {
 				fmt.Println(m.Instruction, m.Menu_name, m.Menu_url)
-				fmt.Fprintf(w, string(getJson(-1, "系统错误!", nil)))
-
+				if _, err := G.DB.Insert("INSERT INTO menu (menu_url, menu_name, menu_lcon, create_time, instruction) VALUES (?, ?, 'lnr-tag', ?, ?)", m.Menu_url, m.Menu_name, time.Now().Format("2006-01-02 15:04:05"), m.Instruction); err == nil {
+					fmt.Fprintf(w, string(getJson(0, "添加成功!", nil)))
+				} else {
+					log.Println("添加系统菜单失败:  ", err.Error())
+					fmt.Fprintf(w, string(getJson(-1, "添加失败!", nil)))
+				}
 			} else {
-				log.Println("函数Sys AddMenu 解析Json失败 :", err)
-				fmt.Fprintf(w, string(getJson(1, "添加成功!", nil)))
+				log.Println("添加系统菜单失败:  ", err.Error())
+				fmt.Fprintf(w, string(getJson(-1, "添加失败!", nil)))
+			}
+		} else if action == "DelMenu" {
+			if _, err := G.DB.Delete("DELETE FROM menu WHERE id = ?", r.PostFormValue("id")); err == nil {
+				fmt.Fprintf(w, string(getJson(0, "删除成功!", nil)))
+			} else {
+				log.Println("删除系统菜单失败:  ", err.Error())
+				fmt.Fprintf(w, string(getJson(-1, "删除失败!", nil)))
 			}
 
+		}else if action == "EditMenu" {
+			var m SysMenuJson
+			json.Unmarshal([]byte(r.PostFormValue("data")), &m)
+			fmt.Println(m)
+
+			fmt.Fprintf(w, string(getJson(0, "编辑成功!", nil)))
 		}
 	}
 }

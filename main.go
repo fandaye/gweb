@@ -17,6 +17,11 @@ func main() {
 	G.Redis.Config = G.Config.RedisConfig() // 初始化redis 配置
 	G.Redis.Connect()                       // 初始化redis 连接
 
+	if err := G.DB.Connect(); err != nil { // 初始化MYSQL 连接
+		log.Println("初始化mysql连接失败: ", err)
+		return
+	}
+
 	if CookieExpiration, err := strconv.Atoi(G.GlobalConfig["CookieExpiration"]); err == nil {
 		G.CookieExpiration = CookieExpiration
 	} else {
