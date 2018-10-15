@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"time"
 	"math/rand"
-	"strconv"
 )
 
 type Global struct {
@@ -70,47 +69,25 @@ func (G *Global) PasswdMD5(p string) (string) {
 	return hex.EncodeToString(h_m5.Sum(nil)) //密码MD5加密
 }
 
+
 // 全局修饰器
 func (G *Global) AuthHandler(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if G.DB.Conn.Driver() == nil{
+			if err := G.DB.Connect(); err != nil { // 初始化MYSQL 连接
+				log.Println("函数 main 初始化mysql连接失败: ", err)
+				return
+			}
+		}
 
-		G.Code = "1"
-
-		if (r.URL.Path == "/favicon.ico") { // 排除网址图标
+		if (r.URL.Path == "/login" || r.URL.Path == "/favicon.ico" || r.Method == "GET") { // 对登录页面不验证cookie
 			f(w, r)
 			return
 		}
 
-		if CookieExpiration, err := strconv.Atoi(G.GlobalConfig["CookieExpiration"]); err == nil {
-			G.CookieExpiration = CookieExpiration
-		} else {
-			log.Println("函数 AuthHandler 获取Cookie过期时间错误: ", err)
-			fmt.Fprintf(w, string(getJson(-1, "系统错误", nil)))
-			return
-		}
-
-		G.DB.Config = G.Config.MysqlConfig() // 初始化mysql配置
-		if err := G.DB.Connect(); err != nil { // 初始化MYSQL 连接
-			log.Println("函数 AuthHandler 初始化mysql连接失败: ", err)
-			fmt.Fprintf(w, string(getJson(-1, "系统错误", nil)))
-			return
-		}
-
-		defer G.DB.Conn.Close() //关闭Mysql 连接
-
-		G.Redis.Config = G.Config.RedisConfig() // 初始化redis 配置
-		G.Redis.Connect()                       // 初始化redis 连接
-		defer G.Redis.Conn.Close()              // 关闭redis 连接
-
-		if (r.URL.Path == "/login") { // 对登录页面不验证cookie
-			f(w, r)
-			return
-		}
-
-		CookieAuthToken, CookieAuthTokenErr := r.Cookie("AuthToken") // 获取cookie 失败重定向到登录页面
+		CookieAuthToken, CookieAuthTokenErr := r.Cookie("AuthToken")
 		CookieUsername, CookieUsernameErr := r.Cookie("Username")
-		if CookieAuthTokenErr != nil || CookieUsernameErr != nil {
-
+		if CookieAuthTokenErr != nil || CookieUsernameErr != nil { // 获取cookie 失败重定向到登录页面
 			http.Redirect(w, r, "/login", http.StatusFound)
 		} else {
 			if UserInfo, err := G.Redis.Get(CookieUsername.Value); err == nil { // 获取redis 信息
@@ -118,32 +95,27 @@ func (G *Global) AuthHandler(f func(http.ResponseWriter, *http.Request)) func(ht
 				json.Unmarshal([]byte(UserInfo), &JsonRes)
 				if CookieAuthToken.Value == JsonRes.AuthToken { /// Cookie 正确
 					if G.UserInfo.Expiration == 0 { /// 过期时间为0 表示服务器重启过
-						if r.Method == "GET" {
-							G.Code = "-2"
-						} else if r.Method == "POST" {
-							fmt.Fprintf(w, string(getJson(-1, "服务完成重启,请重新登录!", nil)))
+						if r.Method == "POST" {
+							fmt.Fprintf(w, string(getJson(-2, "服务完成重启,请重新登录!", nil)))
 							return
 						}
 					} else { /// 刷新redis过期时间
 						G.Redis.ExPire(CookieUsername.Value, G.UserInfo.Expiration)
+						f(w, r)
+						return
 					}
 				} else { /// redis中的AuthToken 与 Cookie中的AuthToken 的值不相等 说明账户异地登录
-					if r.Method == "GET" {
-						G.Code = "-3"
-					} else if r.Method == "POST" {
-						fmt.Fprintf(w, string(getJson(-1, "账户异地登录，被迫下线!", nil)))
+					if r.Method == "POST" {
+						fmt.Fprintf(w, string(getJson(-3, "账户异地登录，被迫下线!", nil)))
 						return
 					}
 				}
 			} else { /// 未获取到redis 信息 说明cookie 已经过期， 即登录超时
-				if r.Method == "GET" {
-					G.Code = "-4"
-				} else if r.Method == "POST" {
-					fmt.Fprintf(w, string(getJson(-1, "登录超时，请重新登录!", nil)))
-					return
+				if r.Method == "POST" {
+					fmt.Fprintf(w, string(getJson(-4, "登录超时，请重新登录!", nil)))
+						return
 				}
 			}
-			f(w, r)
 		}
 	}
 }

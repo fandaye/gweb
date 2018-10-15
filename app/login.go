@@ -16,7 +16,7 @@ func (G *Global) Login(w http.ResponseWriter, r *http.Request) {
 			t.Execute(w, ' ')
 		} else {
 			log.Println("函数 Login GET :", err)
-			fmt.Fprintf(w, string(getJson(-1, "系统错误", nil)))
+			fmt.Fprintf(w, err.Error())
 		}
 	} else if r.Method == "POST" {
 		G.Email = r.PostFormValue("email")
@@ -28,25 +28,7 @@ func (G *Global) Login(w http.ResponseWriter, r *http.Request) {
 		} else if r.PostFormValue("login_day") == "1" {
 			G.UserInfo.Expiration = G.CookieExpiration
 		}
-
 		G.LoginErrorNumber = 0
-
-		if Value, err := strconv.Atoi(G.GlobalConfig["max_login_error_number"]); err == nil {
-			G.MaxLoginErrorNumber = Value
-		} else {
-			log.Println("函数 Login :", err)
-			fmt.Fprintf(w, string(getJson(-1, "系统错误", nil)))
-			return
-		}
-
-		if Value, err := strconv.Atoi(G.GlobalConfig["login_error_lock_time"]); err == nil {
-			G.LoginErrorLockTime = Value
-		} else {
-			log.Println("函数 Login :", err)
-			fmt.Fprintf(w, string(getJson(-1, "系统错误", nil)))
-			return
-		}
-
 		if ValueS, err := G.Redis.Get("login_error_count_" + G.Email); err == nil {
 			if ValueI, err := strconv.Atoi(ValueS); err == nil {
 				G.UserInfo.LoginErrorNumber = ValueI
@@ -58,7 +40,6 @@ func (G *Global) Login(w http.ResponseWriter, r *http.Request) {
 				log.Println("函数 Login :", err)
 			}
 		}
-
 		if UserInfo, Err := G.SelectOne("SELECT * FROM users WHERE email=? OR username=?", G.Email, G.Email); Err != nil { //查询用户信息
 			log.Println("函数 Login 查询用户信息 :", Err)
 			fmt.Fprintf(w, string(getJson(-1, "系统错误", nil)))

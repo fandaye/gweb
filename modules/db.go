@@ -4,18 +4,25 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"fmt"
+	"log"
 )
 
 type DB struct {
-	Conn   sql.DB
+	Conn   sql.DB // 数据库对象
 	Config map[string]string
 }
 
 func (db *DB) Connect() (err error) {
 	mysqlConn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s", db.Config["mysql_username"], db.Config["mysql_password"], db.Config["mysql_host"], db.Config["mysql_port"], db.Config["mysql_dbname"], db.Config["mysql_charset"])
-	connect, err := sql.Open("mysql", mysqlConn)
+	connect, err := sql.Open("mysql", mysqlConn) // 创建数据库对象
 	if err == nil {
 		db.Conn = *connect //数据库连接
+		db.Conn.SetMaxOpenConns(100)
+		db.Conn.SetMaxIdleConns(10)
+		if err := db.Conn.Ping(); err != nil {
+			log.Println(err)
+			return err
+		}
 		return nil
 	} else {
 		return err
@@ -28,11 +35,11 @@ func (db *DB) Insert(sqlstr string, args ...interface{}) (int64, error) {
 	if err != nil {
 		return 1, err
 	}
-	defer stmtIns.Close()
 	result, err := stmtIns.Exec(args...)
 	if err != nil {
 		return 1, err
 	}
+	stmtIns.Close()
 	return result.LastInsertId()
 }
 
@@ -42,11 +49,11 @@ func (db *DB) Update(sqlstr string, args ...interface{}) (int64, error) {
 	if err != nil {
 		return 1, err
 	}
-	defer stmtIns.Close()
 	result, err := stmtIns.Exec(args...)
 	if err != nil {
 		return 1, err
 	}
+	stmtIns.Close()
 	return result.RowsAffected()
 }
 
@@ -56,12 +63,11 @@ func (db *DB) Delete(sqlstr string, args ...interface{}) (int64, error) {
 	if err != nil {
 		return 1, err
 	}
-	defer stmtIns.Close()
-
 	result, err := stmtIns.Exec(args...)
 	if err != nil {
 		return 1, err
 	}
+	stmtIns.Close()
 	return result.RowsAffected()
 }
 
@@ -105,6 +111,7 @@ func (db *DB) SelectAll(sqlstr string, args ...interface{}) (*[]map[string]strin
 		}
 		ret = append(ret, vmap)
 	}
+	rows.Close()
 	return &ret, nil
 }
 
@@ -114,8 +121,8 @@ func (db *DB) SelectOne(sqlstr string, args ...interface{}) (map[string]string, 
 	if err != nil {
 		return make(map[string]string), err
 	}
-	defer stmtOut.Close()
-	rows, err := stmtOut.Query(args...)
+	//defer stmtOut.Close()
+	rows, err := stmtOut.Query(args...) //Query 数据查询
 	if err != nil {
 		return make(map[string]string), err
 	}
@@ -146,5 +153,6 @@ func (db *DB) SelectOne(sqlstr string, args ...interface{}) (map[string]string, 
 		}
 		break //get the first row only
 	}
+	rows.Close()
 	return ret, nil
 }

@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Home</title>
+    <title id="Title"></title>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
@@ -23,6 +23,12 @@
     <link rel="icon" type="image/png" sizes="96x96" href="/static/assets/img/favicon.png">
     <link rel="stylesheet" href="/static/layui/css/layui.css"  media="all">
 </head>
+
+<script type="text/javascript">
+    window.onload = function(){
+        GetMenus();
+    }
+</script>
 
 <body>
 <!-- WRAPPER -->
@@ -79,63 +85,17 @@
                             <li><a href="/logout"><i class="lnr lnr-exit"></i> <span>Logout</span></a></li>
                         </ul>
                     </li>
-                    <!-- <li>
-                        <a class="update-pro" href="#downloads/klorofil-pro-bootstrap-admin-dashboard-template/?utm_source=klorofil&utm_medium=template&utm_campaign=KlorofilPro" title="Upgrade to Pro" target="_blank"><i class="fa fa-rocket"></i> <span>UPGRADE TO PRO</span></a>
-                    </li> -->
                 </ul>
             </div>
         </div>
     </nav>
-    <!-- END NAVBAR -->
-    <!-- LEFT SIDEBAR -->
     <div id="sidebar-nav" class="sidebar">
         <div class="sidebar-scroll">
             <nav>
-                <ul class="nav">
-                    <li><a href="/" class="active"><i class="lnr lnr-home"></i> <span>Dashboard</span></a></li>
-                    <!--li>
-                        <a href="#subPages" data-toggle="collapse" class="collapsed"><i class="lnr lnr-file-empty"></i> <span>Pages</span> <i class="icon-submenu lnr lnr-chevron-left"></i></a>
-                        <div id="subPages" class="collapse ">
-                            <ul class="nav">
-                                <li><a href="page-profile.html" class="">Profile</a></li>
-                                <li><a href="page-login.html" class="">Login</a></li>
-                                <li><a href="page-lockscreen.html" class="">Lockscreen</a></li>
-                            </ul>
-                        </div>
-                    </li-->
-                    <li><a href="/ldap" class=""><i class="lnr lnr-linearicons"></i> <span>用户管理</span></a></li>
+                <ul class="nav" id="Menus">
                 </ul>
             </nav>
         </div>
     </div>
-    {{ if eq .Code "-1" }} <!-- -1 表示系统错误 -->
-    <script type="text/javascript">
-        window.onload = function(){
-            syserror();
-        }
-    </script>
-    {{ end }}
 
-    {{ if eq .Code "-2" }} <!-- -2 表示系统重启 -->
-    <script type="text/javascript">
-        window.onload = function(){
-            restarterror();
-        }
-    </script>
-    {{ end }}
-
-    {{ if eq .Code "-3" }} <!-- -3 强制下线 -->
-    <script type="text/javascript">
-        window.onload = function(){
-            logouterror();
-        }
-    </script>
-    {{ end }}
-    {{ if eq .Code "-4" }} <!-- -4 登录超时 -->
-    <script type="text/javascript">
-        window.onload = function(){
-            logtimeout();
-        }
-    </script>
-    {{ end }}
     {{ end }}

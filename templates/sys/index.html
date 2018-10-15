@@ -1,0 +1,136 @@
+{{ template "head" .}}
+
+<script type="text/javascript">
+    window.onload = function () {
+        GetMenus();
+    }
+</script>
+<div class="main">
+    <div class="main-content">
+        <div class="container-fluid">
+            <div id="SysUserDiv">
+                <div>
+                    <button class="layui-btn layui-btn-radius" onclick="_SysUserrefresh()">用户维护</button>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" onclick="_SysMenurefresh()">菜单维护
+                    </button>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" onclick="_SysRolerefresh()">角色维护
+                    </button>
+                </div>
+                <table class="layui-table">
+                    <thead>
+                    <tr>
+                        <th>邮箱</th>
+                        <th>用户名</th>
+                        <th>角色</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                        <th>最近登录</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="SysUserInfo"></tbody>
+                </table>
+            </div>
+
+            <div id="SysMenuDiv" style="display: none">
+                <div>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" onclick="_SysUserrefresh()">用户维护
+                    </button>
+                    <button class="layui-btn layui-btn-radius" onclick="_SysMenurefresh()">菜单维护</button>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" onclick="_SysRolerefresh()">角色维护
+                    </button>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" style="float:right"
+                            id="SysMenusAddDiv">添加
+                    </button>
+                </div>
+                <table class="layui-table">
+                    <thead>
+                    <tr>
+                        <th>图表</th>
+                        <th>地址</th>
+                        <th>名称</th>
+                        <th>创建时间</th>
+                        <th>描述</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="SysMenuInfo"></tbody>
+                </table>
+            </div>
+
+            <div id="SysRoleDiv" style="display: none">
+                <div>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" onclick="_SysUserrefresh()">用户维护
+                    </button>
+                    <button class="layui-btn layui-btn-primary layui-btn-radius" onclick="_SysMenurefresh()">菜单维护
+                    </button>
+                    <button class="layui-btn layui-btn-radius" onclick="_SysRolerefresh()">角色维护</button>
+                </div>
+                <table class="layui-table">
+                    <thead>
+                    <tr>
+                        <th>名称</th>
+                        <th>创建时间</th>
+                        <th>描述</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="SysRoleInfo"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+<div class="clearfix"></div>
+{{ template "tail" }}
+</div>
+<script src="/static/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/static/assets/vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="/static/assets/vendor/jquery-slimscroll/jquery.slimscroll.min.js"></script>
+<script src="/static/assets/scripts/klorofil-common.js"></script>
+<script src="/static/js/sys.js"></script>
+<script>
+    // 点击事件,弹层
+    $(function () {
+        _SysUserrefresh();
+        $("#SysMenusAddDiv").click(function () {
+            layer.open({
+                type: 1,
+                title: "添加系统菜单",
+                area: ['60%', '265px'],
+                skin: 'white', //没有背景色
+                shadeClose: true,
+                content: '<div id="AddMenuDiv"> <form class="layui-form layui-form-pane" action="" lay-filter="AddMenuDiv"> <div class="main-content"><div class="container-fluid"> <label class="layui-form-label">地址</label> <div class="layui-input-block"> <input type="text" name="menu_url" autocomplete="off" class="layui-input" lay-verify="menu_url" placeholder="地址"> </div> </div> <div class="container-fluid"> <label class="layui-form-label">名称</label> <div class="layui-input-block"> <input type="text" name="menu_name" autocomplete="off" class="layui-input" lay-verify="menu_name" placeholder="名称"> </div> </div> <div class="container-fluid"> <label class="layui-form-label">描述</label> <div class="layui-input-block"> <input type="text" name="instruction" autocomplete="off" class="layui-input" lay-verify="instruction" placeholder="描述"> </div> </div> <div class="container-fluid"> <div class="layui-input-block" style="float:right"> <button class="layui-btn" lay-submit="" lay-filter="AddMenuDivPost" >立即提交</button> <button type="reset" class="layui-btn layui-btn-primary">重置</button> </div> </div> </div> </form> </div>'
+            });
+        })
+    });
+
+    //自定义验证规则
+    form.verify({
+        menu_url: function (value) {
+            if (value.length < 1) {
+                return '地址不能为空 !';
+            }
+        }
+        , menu_name: function (value) {
+            if (value.length < 1) {
+                return '名称不能为空 !';
+            }
+        }
+        , instruction: function (value) {
+            if (value.length < 1) {
+                return '描述不能为空 !';
+            }
+        }
+    });
+
+    //监听提交
+    form.on('submit(AddMenuDivPost)', function (data) {
+        layer.alert(JSON.stringify(data.field));
+        return false;
+    });
+</script>
+</body>
+</html>

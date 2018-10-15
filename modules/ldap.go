@@ -15,6 +15,8 @@ type Ldaps struct {
 	Conn   ldap.Conn
 }
 
+
+
 //查询函数
 func (L *Ldaps) Search(search_dn, objectClass string, attributes []string) ([]*ldap.Entry, error) {
 	searchRequest := ldap.NewSearchRequest(
@@ -64,18 +66,6 @@ func (L *Ldaps) LdapUserADD(givenName, sn, uid, gidNumber, mobile, mail, UnixTim
 	return nil
 }
 
-//添加用户
-func (L *Ldaps) LdapGroupADD(cn, description string) (error) {
-	DN := "cn=" + cn + "," + L.Config["ldap_group_dn"]
-	add := ldap.NewAddRequest(DN)
-	//添加对象
-	add.Attribute("objectClass", []string{"posixGroup", "top"})
-	add.Attribute("gidNumber", []string{L.GetRandomgidNumber()})
-	add.Attribute("description", []string{description})
-	add.Attribute("cn", []string{cn})
-	Err := L.Conn.Add(add) //执行添加用户操作
-	return Err
-}
 
 //删除DN操作
 func (L *Ldaps) Del(DN string) error {
@@ -147,7 +137,7 @@ func (L *Ldaps) GetRandomuidNumber() string {
 
 //生成分组gidNumber
 func (L *Ldaps) GetRandomgidNumber() string {
-	SearchDn := L.Config["ldap_group_dn"]
+	SearchDn := "ou=Group,"+L.Config["ldap_base_dn"]
 	ObjectClass := "(&(objectClass=posixGroup)(objectClass=top))"
 	Attributes := []string{"gidNumber"}
 	uidNumber := 10000

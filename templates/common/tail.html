@@ -4,36 +4,66 @@
         <p>V 1.1</p>
     </div>
 </footer>
-
+<script src="/static/layui/layui.all.js" charset="utf-8"></script>
 <script>
+    var form = layui.form
+        , laydate = layui.laydate
+        , layedit = layui.layedit
+        , layer = layui.layer;
 
-    function syserror() {
-        layer.msg("系统错误!")
+    function puberror(code, msgs) {
+        if (code == '-1') {
+            layer.msg("系统错误!")
+        } else if (code != '0') {
+            layer.confirm(msgs, {
+                btn: ['确定'] //按钮
+            }, function () {
+                //layer.msg('', {icon: 1});
+                window.location.href = "/login";
+            });
+
+        }
     }
-    function restarterror() {
-        layer.alert('服务完成重启，请重新登录!', {
-            skin: 'layui-layer-molv' //样式类名
-            ,closeBtn: 0
-        }, function(){
-            window.location.href = "/login";
+
+    // 自动菜单程序
+    function GetMenus() {
+        $.ajax({
+            type: 'post',
+            url: '/pubilc',
+            data: {"action": 'menu', "url": GetUrlRelativePath()},
+            dataType: 'json',
+            success: function (data) {
+                if (data.code != '0') {
+                    puberror(data.code, data.msg);
+                    return;
+                }
+                var trStr = '<li><a href="/"><i class="lnr lnr-home"></i> <span>仪表盘</span></a></li>';
+                for (i = 0; i < data.data.length; i++) {
+                    if (data.data[i].active == "true") {
+                        trStr += '<li><a href="' + data.data[i].menu_url + '" class="active"><i class="lnr lnr-tag"></i> <span>' + data.data[i].menu_name + '</span></a></li>';
+                        $("#Title").html(data.data[i].menu_name)
+                    } else {
+                        trStr += '<li><a href="' + data.data[i].menu_url + '"><i class="lnr lnr-tag"></i> <span>' + data.data[i].menu_name + '</span></a></li>';
+                    }
+                }
+                $("#Menus").html(trStr);
+            }
+
         });
     }
-    function logouterror() {
-        layer.alert('账户异地登录，被迫下线，请重新登录!', {
-            skin: 'layui-layer-molv' //样式类名
-            ,closeBtn: 0
-        }, function(){
-            window.location.href = "/login";
-        });
+
+    function GetUrlRelativePath() // 获取当前url
+    {
+        var url = document.location.toString();
+        var arrUrl = url.split("//");
+        var start = arrUrl[1].indexOf("/");
+        var relUrl = arrUrl[1].substring(start);//stop省略，截取从start开始到结尾的所有字符
+        if (relUrl.indexOf("?") !== -1) {
+            relUrl = relUrl.split("?")[0];
+        }
+        return relUrl;
     }
-    function logtimeout() {
-        layer.alert('登录超时，请重新登录!', {
-            skin: 'layui-layer-molv' //样式类名
-            ,closeBtn: 0
-        }, function(){
-            window.location.href = "/login";
-        });
-    }
+
 </script>
 
 {{ end }}
