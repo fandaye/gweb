@@ -69,20 +69,27 @@ func (G *Global) PasswdMD5(p string) (string) {
 	return hex.EncodeToString(h_m5.Sum(nil)) //密码MD5加密
 }
 
-
 // 全局修饰器
 func (G *Global) AuthHandler(f func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if G.DB.Conn.Driver() == nil{
+		if G.DB.Conn.Driver() == nil {
 			if err := G.DB.Connect(); err != nil { // 初始化MYSQL 连接
 				log.Println("初始化mysql连接失败: ", err)
 				return
 			}
 		}
-
 		if (r.URL.Path == "/login" || r.URL.Path == "/favicon.ico" || r.Method == "GET") { // 对登录页面不验证cookie
 			f(w, r)
 			return
+		}
+
+		// 判断redis中菜单key是否存在，不存在则创建
+		if _, err := G.Redis.Get("menus_"); err != nil {
+			if err := G.GetMenuWRedis(); err != nil {
+				log.Println("初始化系统菜单错误: ", err)
+				fmt.Fprintf(w, string(getJson(-1, "系统错误!", nil)))
+				return
+			}
 		}
 
 		CookieAuthToken, CookieAuthTokenErr := r.Cookie("AuthToken")
@@ -113,7 +120,7 @@ func (G *Global) AuthHandler(f func(http.ResponseWriter, *http.Request)) func(ht
 			} else { /// 未获取到redis 信息 说明cookie 已经过期， 即登录超时
 				if r.Method == "POST" {
 					fmt.Fprintf(w, string(getJson(-4, "登录超时，请重新登录!", nil)))
-						return
+					return
 				}
 			}
 		}
